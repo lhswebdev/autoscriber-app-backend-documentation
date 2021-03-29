@@ -52,14 +52,14 @@ def sql_setup():
 sql_setup()
 
 
-# Returns a random Uuid with the length of 10; makes sure that uuid isn't taken
-def uuidCreator():
+# Returns a meetingID with the length of 10; makes sure that uuid isn't taken
+def meetingIDCreator():
     
     
 
 
 # Client makes get request
-# Server responds with User dict
+# Server responds with User dict (Generate new UUID and meeting id (use meetingID Creator))
 @app.post("/host")
 def host_meeting():
    
@@ -67,30 +67,34 @@ def host_meeting():
 
 
 # Client makes post request with a dictionary that has "meeting_id" & "name" key
-# Server responds with User
+# Server responds with User dict
 @app.post("/join")
 def join_meeting(user: User):
     
     return user
 
-
+# Client gives server blobs to trasncript
+# Add to `unprocessed` table
 @app.post("/add")
 def add_to_transcript(transcript_entry: TranscriptEntry):
 
 
-
+# Client makes request to server to end meeting
+# Server removes the meeting from `meetings` table and creates a download link for the fininshed trascript (use md_format())
 @app.post("/end")
 def end_meeting(user: User):
     
 
     return {"notes": notes, "download_link": download_link}
 
-
+# Helper Function
+# Inputs blobs and blobs with markdown bulletpoints
 def md_format(notes):
     
     return md
 
-
+# Client asks for download after meeting over
+# Check for transcript in processed table
 @app.get("/download")
 def download_notes(id: str):
     
