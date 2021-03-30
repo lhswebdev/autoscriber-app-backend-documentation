@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-import mysql.connector
+import sqlite3
 from basemodels import User, TranscriptEntry
 from autoscriber import summarize
 import uuid
@@ -22,19 +22,47 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-DOMAIN = ""
+DOMAIN = "http://localhost:8000"
 # Get environ variables
 USER = os.environ.get('SQL_USER')
 PASSWORD = os.environ.get('SQL_PASS')
 # Connect to mysql db
-db = mysql.connector.connect(
-    host="localhost",
-    user=USER,
-    password=PASSWORD,
-    database="autoscriber_app"
-)
-mycursor = db.cursor()
+conn = sqlite3.connect('autoscriber.db', check_same_thread=False)
 
+
+# Setting up sql - Creating Tables
+def sql_setup():
+    unprocessed = '''
+        CREATE TABLE IF NOT EXISTS unprocessed (
+            meeting_id char(38) NOT NULL,
+            uid char(38) NOT NULL,
+            name varchar(255) NOT NULL,
+            dialogue LONGTEXT NOT NULL,
+            time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (meeting_id, time)
+        );
+    '''
+    processed = '''
+        CREATE TABLE IF NOT EXISTS processed (
+            meeting_id char(38) NOT NULL,
+            notes LONGTEXT NOT NULL,
+            download_link TINYTEXT NOT NULL,
+            date DATETIME NOT NULL DEFAULT CURRENT_DATE,
+            PRIMARY KEY (meeting_id)
+        );
+    '''
+    meetings = '''
+        CREATE TABLE IF NOT EXISTS meetings (
+            meeting_id char(38) NOT NULL,
+            host_uid char(38) NOT NULL,
+            PRIMARY KEY (meeting_id)
+        );
+    '''
+    for e in (unprocessed, processed, meetings):
+        conn.execute(e)
+    conn.commit()
+    print("Tables are ready!")
+sql_setup()
 
 # Setting up sql - Creating Tables
 def sql_setup():
