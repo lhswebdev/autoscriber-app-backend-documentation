@@ -62,7 +62,8 @@ def meetingIDCreator():
 # Server responds with User dict (Generate new UUID and meeting id (use meetingID Creator))
 @app.post("/host")
 def host_meeting():
-   
+    user = {'meeting_id': str(meetingIDCreator()), 'uid': str(uuid.uuid4())}
+
     return user
 
 
@@ -70,20 +71,50 @@ def host_meeting():
 # Server responds with User dict
 @app.post("/join")
 def join_meeting(user: User):
-    
+    user = user.dict()
+
+    # Check with database if meeting exists
+
     return user
 
 # Client gives server blobs to trasncript
 # Add to `unprocessed` table
 @app.post("/add")
 def add_to_transcript(transcript_entry: TranscriptEntry):
+    user = transcript_entry.user
 
+    # Check with database if meeting exists
+
+
+    # Add blob to uprocessed table
 
 # Client makes request to server to end meeting
 # Server removes the meeting from `meetings` table and creates a download link for the fininshed trascript (use md_format())
 @app.post("/end")
 def end_meeting(user: User):
-    
+    user = user.dict()
+
+    # Check `meetings` table to confirm that user is meeting host
+
+    # Get dialogue blobs from `unprocessed` table
+
+
+    # Now that meeting is ended, we can clean db of all dialogue from the meeting
+    # Delete all rows from `unprocessed` & `meetings` where meeting_id = user's meeting_id
+
+
+    # Format transcript for autoscriber.summarize()
+    # Each line looks like this: "Name: dialogue" and all lines are joined with \n
+    transcript = "\n".join([": ".join(line) for line in dialogue])
+
+    # Summarize notes using autoscriber.summarize()
+    # notes = summarize(transcript) MD CLUB HAS NOT FINISHED THE AI YET
+    notes = md_format(transcript)
+
+    # Generate download link
+    download_link = f"{DOMAIN}/download?id={user['meeting_id']}"
+
+    # Insert notes into processed table
 
     return {"notes": notes, "download_link": download_link}
 
