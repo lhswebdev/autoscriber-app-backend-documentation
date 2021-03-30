@@ -64,22 +64,6 @@ def sql_setup():
     print("Tables are ready!")
 sql_setup()
 
-# Setting up sql - Creating Tables
-def sql_setup():
-    unprocessed = '''
-        
-    '''
-    processed = '''
-        
-    '''
-    meetings = '''
-        
-    '''
-   
-    print("Tables are ready!")
-sql_setup()
-
-
 # Returns a meetingID with the length of 10; makes sure that uuid isn't taken
 def meetingIDCreator():
     
