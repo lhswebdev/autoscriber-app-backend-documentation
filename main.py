@@ -75,6 +75,7 @@ def meetingIDCreator():
 @app.post("/host")
 def host_meeting():
     user = {'meeting_id': str(meetingIDCreator()), 'uid': str(uuid.uuid4())}
+    # Create meeting in meetings db
 
     return user
 
@@ -95,7 +96,7 @@ def join_meeting(user: User):
 def add_to_transcript(transcript_entry: TranscriptEntry):
     user = transcript_entry.user
 
-    # Check with database if meeting exists
+    # Check with `unprocessed` if meeting exists
 
 
     # Add blob to uprocessed table
