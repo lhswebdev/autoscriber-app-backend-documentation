@@ -88,13 +88,14 @@ def end_meeting(user: User):
     return {"notes": notes, "download_link": download_link}
 
 # Helper Function
-# Inputs blobs and blobs with markdown bulletpoints
+# formats blobs  with markdown bulletpoints
 def md_format(notes):
     
     return md
 
 # Client asks for download after meeting over
-# Check for transcript in processed table
+# checks for meeting notes and retrievs transcript date from `processed` table 
+# writes file called date-note.md
 @app.get("/download")
 def download_notes(id: str):
     
