@@ -1,22 +1,20 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
-from fastapi.middleware.cors import CORSMiddleware
-import sqlite3
-from basemodels import User, TranscriptEntry
-import uuid
-import tempfile
 import os
 import random
+import sqlite3
 import string
-# Not needed for code, but dependencies needed for requirements
-import aiofiles
-import uvicorn
+import tempfile
+import uuid
 
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+
+from basemodels import TranscriptEntry, User
 
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['*'],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -24,12 +22,12 @@ app.add_middleware(
 DOMAIN = "http://localhost:8000"
 
 # Connect to mysql db
-conn = sqlite3.connect('autoscriber.db', check_same_thread=False)
+conn = sqlite3.connect("autoscriber.db", check_same_thread=False)
 
 
 # Setting up sql - Creating Tables
 def sql_setup():
-    unprocessed = '''
+    unprocessed = """
         CREATE TABLE IF NOT EXISTS unprocessed (
             meeting_id char(38) NOT NULL,
             uid char(38) NOT NULL,
@@ -38,8 +36,8 @@ def sql_setup():
             time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (meeting_id, time)
         );
-    '''
-    processed = '''
+    """
+    processed = """
         CREATE TABLE IF NOT EXISTS processed (
             meeting_id char(38) NOT NULL,
             notes LONGTEXT NOT NULL,
@@ -47,23 +45,25 @@ def sql_setup():
             date DATETIME NOT NULL DEFAULT CURRENT_DATE,
             PRIMARY KEY (meeting_id)
         );
-    '''
-    meetings = '''
+    """
+    meetings = """
         CREATE TABLE IF NOT EXISTS meetings (
             meeting_id char(38) NOT NULL,
             host_uid char(38) NOT NULL,
             PRIMARY KEY (meeting_id)
         );
-    '''
+    """
     for e in (unprocessed, processed, meetings):
         conn.execute(e)
     conn.commit()
     print("Tables are ready!")
+
+
 sql_setup()
 
 # Returns a meetingID with the length of 10; makes sure that uuid isn't taken
 def meetingIDCreator():
-    randomUuid = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+    randomUuid = "".join(random.choices(string.ascii_uppercase + string.digits, k=10))
     sql_check_uuid = "SELECT `meeting_id` FROM meetings WHERE meeting_id = ?"
     sql_vals = (randomUuid,)
     cursor = conn.execute(sql_check_uuid, sql_vals)
@@ -71,14 +71,12 @@ def meetingIDCreator():
         return meetingIDCreator()
     return randomUuid
 
-    
-
 
 # Client makes get request
 # Server responds with User dict (Generate new UUID and meeting id (use meetingIDCreator))
 @app.post("/host")
 def host_meeting():
-    user = {'meeting_id': str(meetingIDCreator()), 'uid': str(uuid.uuid4())}
+    user = {"meeting_id": str(meetingIDCreator()), "uid": str(uuid.uuid4())}
     # Create meeting in meetings db
 
     return user
@@ -94,6 +92,7 @@ def join_meeting(user: User):
 
     return user
 
+
 # Client gives server blobs to trasncript
 # Add to `unprocessed` table
 @app.post("/add")
@@ -102,8 +101,8 @@ def add_to_transcript(transcript_entry: TranscriptEntry):
 
     # Check with `unprocessed` if meeting exists
 
-
     # Add blob to uprocessed table
+
 
 # Client makes request to server to end meeting
 # Server removes the meeting from `meetings` table and creates a download link for the fininshed trascript (use md_format())
@@ -115,10 +114,8 @@ def end_meeting(user: User):
 
     # Get dialogue blobs from `unprocessed` table
 
-
     # Now that meeting is ended, we can clean db of all dialogue from the meeting
     # Delete all rows from `unprocessed` & `meetings` where meeting_id = user's meeting_id
-
 
     # Format transcript for autoscriber.summarize()
     # Each line looks like this: "Name: dialogue" and all lines are joined with \n
@@ -135,25 +132,26 @@ def end_meeting(user: User):
 
     return {"notes": notes, "download_link": download_link}
 
+
 # Helper Function
 # formats blobs  with markdown bulletpoints
 def md_format(notes):
     md = ""
-    for line in notes.split('\n'):
+    for line in notes.split("\n"):
         md += f"- {line}  \n"
     return md
 
+
 # Client asks for download after meeting over
-# checks for meeting notes and retrievs transcript date from `processed` table 
+# checks for meeting notes and retrievs transcript date from `processed` table
 # writes file called date-note.md
 @app.get("/download")
 def download_notes(id: str):
     # Query `notes` and `dates` from  `processed` table from notes
 
-
     # Create md file for file response
     # note, date are from the sql database
-    md_file = tempfile.NamedTemporaryFile(delete=False, suffix='.md')
-    fname = f'{date.date()}-notes.md'
-    md_file.write(bytes(notes, encoding='utf-8'))
+    md_file = tempfile.NamedTemporaryFile(delete=False, suffix=".md")
+    fname = f"{date.date()}-notes.md"
+    md_file.write(bytes(notes, encoding="utf-8"))
     return FileResponse(md_file.name, media_type="markdown", filename=fname)
