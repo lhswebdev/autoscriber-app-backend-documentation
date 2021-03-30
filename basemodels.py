@@ -10,3 +10,8 @@ class User(BaseModel):
 class TranscriptEntry(BaseModel):
     user: User
     dialogue: str
+
+
+class Notes(BaseModel):
+    notes: str
+    download_link: str
