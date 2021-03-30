@@ -63,12 +63,19 @@ sql_setup()
 
 # Returns a meetingID with the length of 10; makes sure that uuid isn't taken
 def meetingIDCreator():
-    
+    randomUuid = ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+    sql_check_uuid = "SELECT `meeting_id` FROM meetings WHERE meeting_id = ?"
+    sql_vals = (randomUuid,)
+    cursor = conn.execute(sql_check_uuid, sql_vals)
+    if cursor.fetchone() is not None:
+        return meetingIDCreator()
+    return randomUuid
+
     
 
 
 # Client makes get request
-# Server responds with User dict (Generate new UUID and meeting id (use meetingID Creator))
+# Server responds with User dict (Generate new UUID and meeting id (use meetingIDCreator))
 @app.post("/host")
 def host_meeting():
     user = {'meeting_id': str(meetingIDCreator()), 'uid': str(uuid.uuid4())}
@@ -131,7 +138,9 @@ def end_meeting(user: User):
 # Helper Function
 # formats blobs  with markdown bulletpoints
 def md_format(notes):
-    
+    md = ""
+    for line in notes.split('\n'):
+        md += f"- {line}  \n"
     return md
 
 # Client asks for download after meeting over
