@@ -129,5 +129,12 @@ def md_format(notes):
 # writes file called date-note.md
 @app.get("/download")
 def download_notes(id: str):
-    
+    # Query `notes` and `dates` from  `processed` table from notes
+
+
+    # Create md file for file response
+    # note, date are from the sql database
+    md_file = tempfile.NamedTemporaryFile(delete=False, suffix='.md')
+    fname = f'{date.date()}-notes.md'
+    md_file.write(bytes(notes, encoding='utf-8'))
     return FileResponse(md_file.name, media_type="markdown", filename=fname)
