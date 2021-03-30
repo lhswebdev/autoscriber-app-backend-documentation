@@ -3,7 +3,6 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 from basemodels import User, TranscriptEntry
-from autoscriber import summarize
 import uuid
 import tempfile
 import os
@@ -23,9 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 DOMAIN = "http://localhost:8000"
-# Get environ variables
-USER = os.environ.get('SQL_USER')
-PASSWORD = os.environ.get('SQL_PASS')
+
 # Connect to mysql db
 conn = sqlite3.connect('autoscriber.db', check_same_thread=False)
 
