@@ -9,7 +9,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
-from basemodels import TranscriptEntry, User
+from basemodels import Notes, TranscriptEntry, User
 
 app = FastAPI()
 app.add_middleware(
@@ -26,7 +26,7 @@ conn = sqlite3.connect("autoscriber.db", check_same_thread=False)
 
 
 # Setting up sql - Creating Tables
-def sql_setup():
+def sql_setup() -> None:
     unprocessed = """
         CREATE TABLE IF NOT EXISTS unprocessed (
             meeting_id char(38) NOT NULL,
@@ -62,7 +62,7 @@ def sql_setup():
 sql_setup()
 
 # Returns a meetingID with the length of 10; makes sure that uuid isn't taken
-def meetingIDCreator():
+def meetingIDCreator() -> str:
     randomUuid = "".join(random.choices(string.ascii_uppercase + string.digits, k=10))
     sql_check_uuid = "SELECT `meeting_id` FROM meetings WHERE meeting_id = ?"
     sql_vals = (randomUuid,)
@@ -76,7 +76,7 @@ def meetingIDCreator():
 # Server responds with User dict (Generate new UUID and meeting id (use meetingIDCreator))
 @app.post("/host")
 def host_meeting():
-    user = {"meeting_id": str(meetingIDCreator()), "uid": str(uuid.uuid4())}
+    user = User(meeting_id=str(meetingIDCreator()), uid=str(uuid.uuid4()))
     # Create meeting in meetings db
 
     return user
@@ -84,10 +84,8 @@ def host_meeting():
 
 # Client makes post request with a dictionary that has "meeting_id" & "name" key
 # Server responds with User dict
-@app.post("/join")
+@app.post("/join", response_model=User)
 def join_meeting(user: User):
-    user = user.dict()
-
     # Check with database if meeting exists
 
     return user
@@ -106,7 +104,7 @@ def add_to_transcript(transcript_entry: TranscriptEntry):
 
 # Client makes request to server to end meeting
 # Server removes the meeting from `meetings` table and creates a download link for the fininshed trascript (use md_format())
-@app.post("/end")
+@app.post("/end", response_model=Notes)
 def end_meeting(user: User):
     user = user.dict()
 
@@ -119,7 +117,7 @@ def end_meeting(user: User):
 
     # Format transcript for autoscriber.summarize()
     # Each line looks like this: "Name: dialogue" and all lines are joined with \n
-    transcript = "\n".join([": ".join(line) for line in dialogue])
+    transcript = "\n".join(": ".join(line) for line in dialogue)
 
     # Summarize notes using autoscriber.summarize()
     # notes = summarize(transcript) MD CLUB HAS NOT FINISHED THE AI YET
@@ -130,22 +128,19 @@ def end_meeting(user: User):
 
     # Insert notes into processed table
 
-    return {"notes": notes, "download_link": download_link}
+    return Notes(notes=notes, download_link=download_link)
 
 
 # Helper Function
 # formats blobs  with markdown bulletpoints
-def md_format(notes):
-    md = ""
-    for line in notes.split("\n"):
-        md += f"- {line}  \n"
-    return md
+def md_format(notes: str) -> str:
+    return "".join(f"- {line}  \n" for line in notes.split("\n"))
 
 
 # Client asks for download after meeting over
 # checks for meeting notes and retrievs transcript date from `processed` table
 # writes file called date-note.md
-@app.get("/download")
+@app.get("/download", response_class=FileResponse)
 def download_notes(id: str):
     # Query `notes` and `dates` from  `processed` table from notes
 
